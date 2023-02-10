@@ -1,0 +1,31 @@
+pipeline {
+    agent {
+        label 'camp'
+    }
+
+    parameters {
+        choice choices: ['dev1', 'qa1'], description: 'Environment to run', name: 'ENVIRONMENT_NAME'
+    }
+
+    tools {
+        jdk 'JDK8'
+    }
+
+    stages {
+        stage('Jmeter Run/Report') {
+            steps {
+                dir('api-test/jmeter') {
+                    bat "gradlew clean jmRun jmReport -PenvironmentName=${params.ENVIRONMENT_NAME}"
+                }
+
+                perfReport filterRegex: '', sourceDataFiles: 'api-test/jmeter/build/jmeter-report/*.xml'
+            }
+        }
+
+        stage('Archive Artifacts') {
+            steps {
+                archiveArtifacts artifacts: 'api-test/jmeter/build/jmeter-report/**/*.*'
+            }
+        }
+    }
+}

@@ -1,0 +1,76 @@
+name: Build Image Project-Test
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - '**/project-test/**'
+      - '.github/workflows/docker-project-test.yml'
+  pull_request:
+
+jobs:
+  main:
+    runs-on: ubuntu-20.04
+    if: "contains(github.event.head_commit.message, '[image]')"
+    strategy:
+      matrix:
+        MODULE_NAME: ["Project Test"]
+    env: # define constant
+      PROJECT_PREFIX: backend
+      PROJECT_NAME: project
+      IMAGE_PREFIX: project
+      MODULE_NAME: project-test
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+          submodules: true
+
+      - name: Set up JDK 1.8
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+          # architecture: x64
+
+      - name: Export Global Var
+        # define global var, then put to GITHUB_ENV
+        run: |
+          echo "ALI_DOCKER_REGISTRY=${{ secrets.ALI_DOCKER_HUB_REGISTRY }}" >> $GITHUB_ENV
+          echo "ALI_DOCKER_USERNAME=${{ secrets.ALI_DOCKER_REGISTRY_USERNAME }}" >> $GITHUB_ENV
+          echo "ALI_DOCKER_PASSWORD=${{ secrets.ALI_DOCKER_REGISTRY_PASSWORD }}" >> $GITHUB_ENV
+          echo "JASYPT_ENCRYPTOR_PASSWORD=${{ secrets.JASYPT_ENCRYPTOR_PASSWORD }}" >> $GITHUB_ENV
+          echo "PROJECT_HOME=$PWD" >> $GITHUB_ENV
+          echo "TAG=`echo \`date +%Y%m%d\`.${GITHUB_SHA} | cut -c1-16`" >> $GITHUB_ENV
+
+      - name: Cache Maven packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Build Project
+        run: |
+          cd $PROJECT_HOME/$PROJECT_PREFIX/$PROJECT_NAME
+          cd common-api/ && ./reparent.sh && cd ../
+          mvn clean package -DskipTests=true
+
+      - name: Upload ${{ matrix.MODULE_NAME }} Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${MODULE_NAME}-1.0-SNAPSHOT.jar
+          path: ${{ github.workspace }}/**/${MODULE_NAME}*.jar
+          retention-days: 7
+
+      - name: Push ${{ matrix.MODULE_NAME }} Image
+        run: |
+          cd $PROJECT_HOME/$PROJECT_PREFIX/$PROJECT_NAME/$MODULE_NAME
+          image=$IMAGE_PREFIX-$MODULE_NAME:${TAG}
+          docker build -f Dockerfile --build-arg MODULE_NAME=$MODULE_NAME --build-arg COMMON_SERVICE_IP=$COMMON_SERVICE_IP --build-arg JASYPT_ENCRYPTOR_PASSWORD=$JASYPT_ENCRYPTOR_PASSWORD -t ${image} .
+          docker login --username=$ALI_DOCKER_USERNAME --password=$ALI_DOCKER_PASSWORD $ALI_DOCKER_REGISTRY
+          docker tag $image $ALI_DOCKER_REGISTRY/alice52/$image
+          docker push $ALI_DOCKER_REGISTRY/alice52/$image
+          echo "image:" ${image}

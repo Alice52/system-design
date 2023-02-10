@@ -1,0 +1,12 @@
+version: '3.0'
+services:
+  dev-project-test:
+    image: registry.cn-shanghai.aliyuncs.com/alice52/project-project-test:20221031.7e3eeae
+    restart: 'on-failure:3'
+    container_name: dev-project-test
+    volumes:
+      - /root/dev-project-test/logs:/logs
+    ports:
+      - 8083:8080
+    environment:
+      - TZ=Asia/Shanghai
