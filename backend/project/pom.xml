@@ -10,11 +10,12 @@
 
     <modules>
         <module>common-api</module>
-        <module>project-test</module>
+        <module>design-tools</module>
+        <module>design-system</module>
+        <module>design-common</module>
     </modules>
 
     <properties>
-
 
         <!--  #region  ====================== common version =====================    -->
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
