@@ -16,7 +16,7 @@ jobs:
     if: "!contains(github.event.head_commit.message, 'ci skip') && !contains(github.event.head_commit.message, '[image]')"
     env: # define constant
       PROJECT_PREFIX: backend
-      PROJECT_NAME: project
+      PROJECT_NAME: system-design
 
     steps:
       - name: Checkout Code

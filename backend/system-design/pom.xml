@@ -4,15 +4,15 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.github.alice52</groupId>
-    <artifactId>project</artifactId>
+    <artifactId>system-design</artifactId>
     <version>0.0.1</version>
     <packaging>pom</packaging>
 
     <modules>
         <module>common-api</module>
+        <module>design-common</module>
         <module>design-tools</module>
         <module>design-system</module>
-        <module>design-common</module>
     </modules>
 
     <properties>
